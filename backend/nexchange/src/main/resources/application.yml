@@ -4,4 +4,15 @@ spring:
         username: root
         password: blueman2002
         driver-class-name: com.mysql.cj.jdbc.Driver
+    mail:
+        host: smtp.163.com
+        username: skillup163@163.com    #发送方邮箱
+        password: FVXGAWGELNKQDWVK    #发送方邮箱授权码
+        protocol: smtp    #发送邮件协议
+        properties:
+            mail:
+                smtp:
+                    ssl:
+                        enable: true #开启SSL
+        default-encoding: utf-8
 
