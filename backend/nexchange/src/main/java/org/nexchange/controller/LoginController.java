@@ -2,6 +2,8 @@ package org.nexchange.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sun.net.httpserver.HttpsServer;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jdk.jfr.Frequency;
@@ -14,6 +16,7 @@ import org.nexchange.utils.ResultUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "登录接口")
 @RestController
 @RequestMapping("/login")
 public class LoginController {
@@ -23,6 +26,7 @@ public class LoginController {
     @Autowired
     private UserMapper userMapper;
 
+    @Operation(summary = "使用邮箱+密码登录")
     @PostMapping("/withPasswd")
     public Result<Object> loginWithPassword(@RequestBody User user, HttpServletRequest request) {
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -38,6 +42,7 @@ public class LoginController {
         return ResultUtil.error_401("密码错误，请重试！");
     }
 
+    @Operation(summary = "使用邮箱+验证码登录")
     @PostMapping("/withVerCode")
     public Result<Object> loginWithVerCode(@RequestBody User user, String verCode, HttpServletRequest request) {
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -50,6 +55,7 @@ public class LoginController {
 
     }
 
+    @Operation(summary = "使用微信登录")
     @PostMapping("/withWeChat")
     public Result<Object> loginWithWeChat(@RequestBody User user, HttpServletRequest request) {
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
@@ -65,6 +71,7 @@ public class LoginController {
         return ResultUtil.success("登陆成功");
     }
 
+    @Operation(summary = "注册")
     @PostMapping("/register")
     public Result<Object> register(@RequestBody User user, @RequestParam("verCode") String verCode, HttpServletRequest request) {
         //验证邮箱格式
@@ -89,6 +96,7 @@ public class LoginController {
         return result;
     }
 
+    @Operation(summary = "忘记密码")
     @PostMapping("/resetPasswd")
     public Result<Object> resetPasswd(@RequestBody User user, @RequestParam String verCode, HttpServletRequest request) {
         LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();

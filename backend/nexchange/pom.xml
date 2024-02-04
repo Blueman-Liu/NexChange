@@ -101,6 +101,14 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!--基于knife4j-openapi3的api接口文档生成-->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.3.0</version>
+        </dependency>
+
+
         <!-- 引入Spring Security -->
 <!--        <dependency>-->
 <!--            <groupId>org.springframework.boot</groupId>-->
