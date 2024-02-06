@@ -26,4 +26,7 @@ public class User {
 
     @TableField("regDateTime")
     private LocalDateTime regDateTime;
+
+    @TableField("salt")
+    private String salt;
 }

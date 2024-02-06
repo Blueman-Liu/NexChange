@@ -14,11 +14,14 @@ import org.nexchange.utils.MailSender;
 import org.nexchange.utils.Result;
 import org.nexchange.utils.ResultUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @Tag(name = "登录接口")
 @RestController
-@RequestMapping("/login")
+@RequestMapping("/api/auth")
 public class LoginController {
     @Autowired
     private UserService userService;
@@ -27,15 +30,14 @@ public class LoginController {
     private UserMapper userMapper;
 
     @Operation(summary = "使用邮箱+密码登录")
-    @PostMapping("/withPasswd")
+    @PostMapping("/login/withPasswd")
     public Result<Object> loginWithPassword(@RequestBody User user, HttpServletRequest request) {
-        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getAccount, user.getAccount());
-        User tmp = userService.getOne(lambdaQueryWrapper);
+        User tmp = userService.getByAccount(user.getAccount());
 
         if (tmp == null) return ResultUtil.error_401("查无此用户");
 
-        if (tmp.getPassword().equals(user.getPassword())) {
+        String saltedPasswd = DigestUtils.md5DigestAsHex((user.getPassword() + tmp.getSalt()).getBytes());
+        if (tmp.getPassword().equals(saltedPasswd)) {
             //todo: redis
             return ResultUtil.success("登陆成功");
         }
@@ -43,11 +45,9 @@ public class LoginController {
     }
 
     @Operation(summary = "使用邮箱+验证码登录")
-    @PostMapping("/withVerCode")
+    @PostMapping("/login/withVerCode")
     public Result<Object> loginWithVerCode(@RequestBody User user, String verCode, HttpServletRequest request) {
-        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getAccount, user.getAccount());
-        User tmp = userService.getOne(lambdaQueryWrapper);
+        User tmp = userService.getByAccount(user.getAccount());
 
         if (tmp == null) return ResultUtil.error_401("查无此用户");
 
@@ -56,14 +56,15 @@ public class LoginController {
     }
 
     @Operation(summary = "使用微信登录")
-    @PostMapping("/withWeChat")
+    @PostMapping("/login/withWeChat")
     public Result<Object> loginWithWeChat(@RequestBody User user, HttpServletRequest request) {
-        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getAccount, user.getAccount());
-        User tmp = userService.getOne(lambdaQueryWrapper);
+        User tmp = userService.getByAccount(user.getAccount());
 
         if (tmp == null) {
-            user.setPassword("123456");
+            String salt = UUID.randomUUID().toString();
+            user.setSalt(salt);
+            String initPasswd = DigestUtils.md5DigestAsHex(("123456" + salt).getBytes());
+            user.setPassword(initPasswd);
             user.setUsername("用户" + user.getAccount());
             userMapper.insert(user);
             return ResultUtil.success("已自动注册，登陆成功");
@@ -78,9 +79,8 @@ public class LoginController {
         if (!MailSender.isValidEmail(user.getAccount())) {
             return ResultUtil.error_401("邮箱格式错误");
         }
-        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getAccount, user.getAccount());
-        User tmp = userService.getOne(lambdaQueryWrapper);
+
+        User tmp = userService.getByAccount(user.getAccount());
 
         if (tmp != null) {
             return ResultUtil.error_401("该邮箱已被注册过，试试另一个？");
@@ -88,8 +88,7 @@ public class LoginController {
 
         Result<Object> result = verify(user.getAccount(), verCode, request.getSession());
         if (result.equals(ResultUtil.success("验证成功！", user.getAccount()))) {
-            user.setUsername("用户" + user.getAccount());
-            userMapper.insert(user);
+            userService.addUser(user);
             return ResultUtil.success("注册成功");
         }
 
@@ -99,19 +98,16 @@ public class LoginController {
     @Operation(summary = "忘记密码")
     @PostMapping("/resetPasswd")
     public Result<Object> resetPasswd(@RequestBody User user, @RequestParam String verCode, HttpServletRequest request) {
-        LambdaQueryWrapper<User> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(User::getAccount, user.getAccount());
-        User tmp = userService.getOne(lambdaQueryWrapper);
+        User tmp = userService.getByAccount(user.getAccount());
 
         if (tmp == null) {
             return ResultUtil.error_401("该邮箱未被注册过，请重试！");
         }
+
         Result<Object> result = verify(user.getAccount(), verCode, request.getSession());
         if (result.equals(ResultUtil.success("验证成功！", user.getAccount()))) {
-            if (user.getPassword().equals(tmp.getPassword())) {
-                return ResultUtil.error_401("该密码与原密码相同，请重试!");
-            }
-            tmp.setPassword(user.getPassword());
+            String saltedPasswd =DigestUtils.md5DigestAsHex((user.getPassword() + tmp.getSalt()).getBytes());
+            tmp.setPassword(saltedPasswd);
             userService.saveOrUpdate(tmp);
             return ResultUtil.success("修改成功");
         }
@@ -125,7 +121,7 @@ public class LoginController {
         String rst = (String) session.getAttribute(email);
         if ("".equals(verCode)) {
             return ResultUtil.error_401("请输入验证码！");
-        } else if (rst == null || !verCode.equals(rst)) {  //验证session是否存在，不存在则验证码失效
+        } else if (!verCode.equals(rst)) {  //验证session是否存在，不存在则验证码失效
             return ResultUtil.error_401("验证失败！验证码错误或已过期。");
         } else {
             session.removeAttribute(email);

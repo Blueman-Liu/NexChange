@@ -1,4 +1,4 @@
-package org.nexchange.utils.swagger.config;
+package org.nexchange.config;
 
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;

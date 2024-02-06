@@ -1,4 +1,5 @@
 spring:
+
     datasource:
         url: jdbc:mysql://localhost:3306/nexchange?useUnicode=true&characterEncoding=UTF-8&useSSL=false
         username: root
