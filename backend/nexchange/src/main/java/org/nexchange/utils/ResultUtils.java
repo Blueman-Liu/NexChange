@@ -1,6 +1,6 @@
 package org.nexchange.utils;
 
-public class ResultUtil {
+public class ResultUtils {
 
     /**
      * 成功且带数据带信息

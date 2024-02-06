@@ -3,7 +3,7 @@ package org.nexchange.utils;
 import java.security.SecureRandom;
 import java.util.Random;
 
-public class VerCodeGenUtil {
+public class VerCodeGenUtils {
     private static final String SYMBOLS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final Random RANDOM = new SecureRandom();
     /**

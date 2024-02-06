@@ -1,5 +1,4 @@
 spring:
-
     datasource:
         url: jdbc:mysql://localhost:3306/nexchange?useUnicode=true&characterEncoding=UTF-8&useSSL=false
         username: root
@@ -45,5 +44,13 @@ spring:
             username: ljj
             # Basic认证密码
             password: 123456
+
+    #Security
+#    security:
+#        jwt:
+#            key: qwertyuiop
+#            expire: 7
+
+
 
 

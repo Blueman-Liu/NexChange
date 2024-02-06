@@ -2,7 +2,7 @@ package org.nexchange.service.impl;
 
 import org.nexchange.service.EmailService;
 import org.nexchange.utils.MailSender;
-import org.nexchange.utils.VerCodeGenUtil;
+import org.nexchange.utils.VerCodeGenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -43,7 +43,7 @@ public class EmailServiceImpl implements EmailService {
         if(!MailSender.isValidEmail(receiver)) return "请输入正确的邮箱地址";
 
         setReceiver(receiver);
-        String verCode = VerCodeGenUtil.getVerCode();
+        String verCode = VerCodeGenUtils.getVerCode();
 
         System.out.println(verCode);
 

@@ -1,7 +1,7 @@
 package org.nexchange.controller;
 
 import org.nexchange.utils.Result;
-import org.nexchange.utils.ResultUtil;
+import org.nexchange.utils.ResultUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,6 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class IndexController {
     @GetMapping("/index")
     public Result<Object> index() {
-        return ResultUtil.success();
+        return ResultUtils.success();
     }
 }
