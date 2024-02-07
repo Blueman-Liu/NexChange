@@ -6,14 +6,15 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import jakarta.annotation.Resource;
 import lombok.Getter;
+import org.nexchange.entity.BlackItem;
 import org.nexchange.entity.User;
+import org.nexchange.service.RedisService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class JwtUtils {
@@ -28,11 +29,16 @@ public class JwtUtils {
 
     private final Algorithm algorithm = Algorithm.HMAC256(key);
 
+    @Resource
+    private RedisService redisService;
+
+
     //供普通登录实现使用
     public String createJwt(User user) {
         Date expire = this.expireTime();
         this.createdExpireTime = expire;
         return JWT.create()
+                .withJWTId(UUID.randomUUID().toString())
                 .withClaim("id", user.getUserID())
                 .withClaim("username", user.getUsername())
                 .withClaim("account", user.getAccount())
@@ -68,20 +74,26 @@ public class JwtUtils {
         JWTVerifier jwtVerifier = JWT.require(algorithm).build();
         try {
             DecodedJWT verify = jwtVerifier.verify(token);
-            Date expireDate = verify.getExpiresAt();
-            return new Date().after(expireDate) ? null : verify;
+//            if (redisService.sIsMember("black", new BlackItem(token, new Date()))) {
+//                return null;
+//            }
+//            Date expireDate = verify.getExpiresAt();
+//            return new Date().after(expireDate) ? null : verify;
+            return verify;
         } catch (JWTVerificationException e) {
             return null;
         }
     }
 
-    private String convertToken(String headerToken) {
+    public String convertToken(String headerToken) {
         if (headerToken == null || !headerToken.startsWith("bearer ")) {
             return null;
         }
         return headerToken.substring(7);
     }
     public User toUser(DecodedJWT jwt) {
+        if (jwt == null)
+            return null;
         Map<String, Claim> claims = jwt.getClaims();
         User user = new User();
         user.setUsername(claims.get("username").asString());

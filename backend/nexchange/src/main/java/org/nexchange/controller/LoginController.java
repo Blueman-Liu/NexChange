@@ -1,5 +1,6 @@
 package org.nexchange.controller;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.sun.net.httpserver.HttpsServer;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,8 +9,13 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jdk.jfr.Frequency;
+import lombok.extern.flogger.Flogger;
+import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
+import org.nexchange.entity.BlackItem;
 import org.nexchange.entity.User;
 import org.nexchange.mapper.UserMapper;
+import org.nexchange.service.RedisService;
 import org.nexchange.service.UserService;
 import org.nexchange.utils.JwtUtils;
 import org.nexchange.utils.MailSender;
@@ -20,9 +26,12 @@ import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.http.HttpRequest;
+import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 @Tag(name = "登录接口")
+@Slf4j
 @RestController
 @RequestMapping("/api")
 public class LoginController {
@@ -35,6 +44,9 @@ public class LoginController {
     @Resource
     private JwtUtils jwtUtils;
 
+    @Resource
+    private RedisService redisService;
+
     @Operation(summary = "使用邮箱+密码登录")
     @PostMapping("/login/withPasswd")
     public Result<Object> loginWithPassword(@RequestBody User user, HttpServletRequest request) {
@@ -45,6 +57,7 @@ public class LoginController {
         String saltedPasswd = DigestUtils.md5DigestAsHex((user.getPassword() + tmp.getSalt()).getBytes());
         if (tmp.getPassword().equals(saltedPasswd)) {
             String jwt = jwtUtils.createJwt(tmp);
+            redisService.set(tmp.getAccount(), jwt, 7 * 24 * 60);
             return ResultUtils.success("登陆成功", jwt);
         }
         return ResultUtils.error_401("密码错误，请重试！");
@@ -56,12 +69,14 @@ public class LoginController {
         User tmp = userService.getByAccount(user.getAccount());
 
         if (tmp == null) return ResultUtils.error_401("查无此用户");
-
-        return (verify(user.getAccount(), verCode, request.getSession())
-                .equals(ResultUtils.success("验证成功！", user.getAccount())))
-                ? ResultUtils.success("登陆成功", jwtUtils.createJwt(tmp))
-                : ResultUtils.error_401("验证失败，请重试！");
-
+        if (verify(user.getAccount(), verCode, request.getSession())
+                .equals(ResultUtils.success("验证成功！", user.getAccount()))) {
+            String jwt = jwtUtils.createJwt(tmp);
+            redisService.set(tmp.getAccount(), jwt, 7 * 24 * 60);
+            return ResultUtils.success("登陆成功", jwt);
+        } else {
+            return ResultUtils.error_401("验证失败，请重试！");
+        }
     }
 
     @Operation(summary = "使用微信登录")
@@ -76,7 +91,9 @@ public class LoginController {
             user.setPassword(initPasswd);
             user.setUsername("用户" + user.getAccount());
             userMapper.insert(user);
-            return ResultUtils.success("已自动注册，登陆成功", jwtUtils.createJwt(user));
+            String jwt = jwtUtils.createJwt(user);
+            redisService.set(user.getAccount(), jwt, 7 * 24 * 60);
+            return ResultUtils.success("已自动注册，登陆成功", jwt);
         }
         return ResultUtils.success("登陆成功");
     }
@@ -98,7 +115,9 @@ public class LoginController {
         Result<Object> result = verify(user.getAccount(), verCode, request.getSession());
         if (result.equals(ResultUtils.success("验证成功！", user.getAccount()))) {
             userService.addUser(user);
-            return ResultUtils.success("注册成功", jwtUtils.createJwt(user));
+            String jwt = jwtUtils.createJwt(user);
+            redisService.set(user.getAccount(), jwt, 7 * 24 * 60);
+            return ResultUtils.success("注册成功", jwt);
         }
 
         return result;
@@ -123,8 +142,6 @@ public class LoginController {
         return result;
     }
 
-
-
     private Result<Object> verify(String email, String verCode, HttpSession session) {
 
         String rst = (String) session.getAttribute(email);
@@ -137,11 +154,35 @@ public class LoginController {
             return ResultUtils.success("验证成功！", email);
         }
     }
+    @GetMapping("/logout")
+    public Result<Object> logout(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        String token = jwtUtils.convertToken(header);
+        DecodedJWT decodedJWT = jwtUtils.resolveJwt(header);
+        User user = jwtUtils.toUser(decodedJWT);
+        redisService.del(user.getAccount());
+        //redisService.sAdd("black", new BlackItem(token, new Date()));
+        return ResultUtils.success("登出成功");
+    }
 
     @GetMapping("/getUser")
     public Result<Object> getUserJwt(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
-        User user = jwtUtils.toUser(jwtUtils.resolveJwt(header));
+        DecodedJWT decodedJWT = jwtUtils.resolveJwt(header);
+//        if (decodedJWT == null) {
+//            return ResultUtils.error_401("用户已登出，请重新登录");
+//        }
+
+        User user = jwtUtils.toUser(decodedJWT);
+
+        //log.info(redisService.sMembers("black").toString());
+
+        if (redisService.get(user.getAccount()) == null) {
+            return ResultUtils.error_401("用户登录已过期，请重新登录");
+        }
+        if (!redisService.get(user.getAccount()).equals(jwtUtils.convertToken(header))) {
+            return ResultUtils.error_401("用户已登出，请重新登录");
+        }
         return ResultUtils.success(user.getUsername(), user);
     }
 
