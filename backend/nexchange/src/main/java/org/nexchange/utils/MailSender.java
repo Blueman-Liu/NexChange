@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class MailSender {
     //向邮箱发送验证码
-    public static String sendEmail4Verify(JavaMailSender jms, String sender, String receiver, String verCode) {
+    public static Result<Object> sendEmail4Verify(JavaMailSender jms, String sender, String receiver, String verCode) {
         //随机数用作验证
         //String verCode = VerCodeGenerateUtil.getVerCode();
         try {
@@ -33,9 +33,9 @@ public class MailSender {
 
         } catch (Exception e) {
             System.out.println(e);
-            return ("发送邮件失败，请核对邮箱账号");
+            return ResultUtils.error_401("发送邮件失败，请核对邮箱账号");
         }
-        return "验证码已经发送您的邮箱，请前去邮箱查看，验证码是：" + verCode ;
+        return ResultUtils.success("验证码已经发送您的邮箱，请前去邮箱查看") ;
     }
 
 
@@ -77,5 +77,6 @@ public class MailSender {
         }
         return false;
     }
+
 
 }

@@ -1,2 +1,54 @@
-package org.nexchange.service.impl;public class ProductServiceImpl {
+package org.nexchange.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
+import org.nexchange.entity.Collection;
+import org.nexchange.entity.Product;
+import org.nexchange.entity.User;
+import org.nexchange.mapper.ProductMapper;
+import org.nexchange.service.CollectionService;
+import org.nexchange.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
+    @Autowired
+    private ProductMapper productMapper;
+
+    @Autowired
+    private CollectionService collectionService;
+
+    @Override
+    public void addProduct(Product product) {
+        productMapper.insert(product);
+    }
+
+    @Override
+    public void setProduct(Product product) {
+        productMapper.updateById(product);
+    }
+
+    @Override
+    public List<Product> getProductsBySellerID(User user) {
+        LambdaQueryWrapper<Product> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Product::getSellerID, user.getUserID());
+        List<Product> list = productMapper.selectList(lambdaQueryWrapper);
+        return list;
+    }
+
+    @Override
+    public void collect(long productID, long userID) {
+        collectionService.add(productID, userID);
+    }
+
+    @Override
+    public void uncollect(long productID, long userID) {
+        collectionService.delete(productID, userID);
+    }
+
+
 }

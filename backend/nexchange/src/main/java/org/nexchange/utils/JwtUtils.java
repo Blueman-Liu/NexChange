@@ -40,7 +40,6 @@ public class JwtUtils {
         return JWT.create()
                 .withJWTId(UUID.randomUUID().toString())
                 .withClaim("id", user.getUserID())
-                .withClaim("username", user.getUsername())
                 .withClaim("account", user.getAccount())
                 .withExpiresAt(expire)
                 .withIssuedAt(new Date())
@@ -96,7 +95,6 @@ public class JwtUtils {
             return null;
         Map<String, Claim> claims = jwt.getClaims();
         User user = new User();
-        user.setUsername(claims.get("username").asString());
         user.setUserID(claims.get("id").asLong());
         user.setAccount(claims.get("account").asString());
         return user;

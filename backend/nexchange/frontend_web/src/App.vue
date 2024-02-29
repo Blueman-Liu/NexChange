@@ -1,20 +1,34 @@
-<script setup>
+<!--<script setup>-->
+<script>
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
+import Login from "@/components/Login.vue";
+import Index from "@/components/Index.vue";
+
+export default {
+  name: 'App',
+  components: {
+    Login,
+    Index
+  }
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
+<!--  <header>-->
+<!--    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />-->
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+<!--    <div class="wrapper">-->
+<!--      <HelloWorld msg="You did it!" />-->
+<!--    </div>-->
+    <div id="app">
+      <Login />
     </div>
-  </header>
+<!--  </header>-->
 
-  <main>
-    <TheWelcome />
-  </main>
+<!--  <main>-->
+<!--    <TheWelcome />-->
+<!--  </main>-->
 </template>
 
 <style scoped>
@@ -43,5 +57,14 @@ header {
     place-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+#app {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
 }
 </style>

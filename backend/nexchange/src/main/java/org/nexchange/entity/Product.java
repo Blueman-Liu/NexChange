@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @TableName("products")
 public class Product {
     @TableId(value = "productID", type = IdType.AUTO)
-    private Long productID;
+    private long productID;
 
     @TableField("productName")
     private String productName;
@@ -21,7 +21,7 @@ public class Product {
     private String description;
 
     @TableField("sellerID")
-    private Long sellerID;
+    private long sellerID;
 
     @TableField("price")
     private double price;
@@ -34,4 +34,10 @@ public class Product {
 
     @TableField("imageURL")
     private String imageURL;
+
+    @TableField("quality")
+    private double quality;
+
+    @TableField("categoryID")
+    private long categoryID;
 }

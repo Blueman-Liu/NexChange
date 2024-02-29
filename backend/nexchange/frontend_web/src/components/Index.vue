@@ -1,9 +1,9 @@
-<script setup>
+<script>
 
 </script>
 
 <template>
-  $END$
+ <p>successfully login</p>
 </template>
 
 <style scoped>

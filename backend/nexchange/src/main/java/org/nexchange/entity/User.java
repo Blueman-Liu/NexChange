@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("`users`")
+@TableName("users")
 public class User {
 
     @TableId(value = "userID", type = IdType.AUTO)
@@ -29,4 +29,10 @@ public class User {
 
     @TableField("salt")
     private String salt;
+
+    @TableField("sex")
+    private String sex;
+
+    @TableField("imageURL")
+    private String imageURL;
 }

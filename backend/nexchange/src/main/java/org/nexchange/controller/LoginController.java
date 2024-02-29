@@ -1,20 +1,15 @@
 package org.nexchange.controller;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.sun.net.httpserver.HttpsServer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import jdk.jfr.Frequency;
-import lombok.extern.flogger.Flogger;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
-import org.nexchange.entity.BlackItem;
 import org.nexchange.entity.User;
 import org.nexchange.mapper.UserMapper;
+import org.nexchange.service.EmailService;
 import org.nexchange.service.RedisService;
 import org.nexchange.service.UserService;
 import org.nexchange.utils.JwtUtils;
@@ -25,13 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.http.HttpRequest;
-import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
 @Tag(name = "登录接口")
 @Slf4j
+@CrossOrigin
 @RestController
 @RequestMapping("/api")
 public class LoginController {
@@ -46,6 +39,9 @@ public class LoginController {
 
     @Resource
     private RedisService redisService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Operation(summary = "使用邮箱+密码登录")
     @PostMapping("/login/withPasswd")
@@ -142,17 +138,23 @@ public class LoginController {
         return result;
     }
 
-    private Result<Object> verify(String email, String verCode, HttpSession session) {
+    private Result<Object> verify(String account, String verCode, HttpSession session) {
 
-        String rst = (String) session.getAttribute(email);
-        if ("".equals(verCode)) {
-            return ResultUtils.error_401("请输入验证码！");
-        } else if (!verCode.equals(rst)) {  //验证session是否存在，不存在则验证码失效
-            return ResultUtils.error_401("验证失败！验证码错误或已过期。");
-        } else {
-            session.removeAttribute(email);
-            return ResultUtils.success("验证成功！", email);
+//        String rst = (String) session.getAttribute(email);
+//        if ("".equals(verCode)) {
+//            return ResultUtils.error_401("请输入验证码！");
+//        } else if (!verCode.equals(rst)) {  //验证session是否存在，不存在则验证码失效
+//            return ResultUtils.error_401("验证失败！验证码错误或已过期。");
+//        } else {
+//            session.removeAttribute(email);
+//            return ResultUtils.success("验证成功！", email);
+//        }
+        String msg = emailService.verifyEmail(verCode, account);
+        if (msg.equals("验证成功！")) {
+            redisService.del(verCode);
+            return ResultUtils.success(msg, account);
         }
+        return ResultUtils.error_401(msg, account);
     }
     @GetMapping("/logout")
     public Result<Object> logout(HttpServletRequest request) {
@@ -162,28 +164,10 @@ public class LoginController {
         User user = jwtUtils.toUser(decodedJWT);
         redisService.del(user.getAccount());
         //redisService.sAdd("black", new BlackItem(token, new Date()));
+        log.info(user.getUsername() + " logout successfully!");
         return ResultUtils.success("登出成功");
     }
 
-    @GetMapping("/getUser")
-    public Result<Object> getUserJwt(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        DecodedJWT decodedJWT = jwtUtils.resolveJwt(header);
-//        if (decodedJWT == null) {
-//            return ResultUtils.error_401("用户已登出，请重新登录");
-//        }
 
-        User user = jwtUtils.toUser(decodedJWT);
-
-        //log.info(redisService.sMembers("black").toString());
-
-        if (redisService.get(user.getAccount()) == null) {
-            return ResultUtils.error_401("用户登录已过期，请重新登录");
-        }
-        if (!redisService.get(user.getAccount()).equals(jwtUtils.convertToken(header))) {
-            return ResultUtils.error_401("用户已登出，请重新登录");
-        }
-        return ResultUtils.success(user.getUsername(), user);
-    }
 
 }
