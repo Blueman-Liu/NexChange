@@ -1,5 +1,6 @@
 package org.nexchange.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.nexchange.entity.Collection;
 import org.nexchange.entity.Product;
@@ -16,4 +17,6 @@ public interface ProductService extends IService<Product> {
     public List<Product> getProductsBySellerID(User user);
     void collect(long productID, long userID);
     void uncollect(long productID, long userID);
+    Page<Product> getProdPage(int pageNum, int pageSize, long categoryID, String searchText, long sellerID);
+
 }

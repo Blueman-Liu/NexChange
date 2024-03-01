@@ -70,8 +70,8 @@ public class ProductController {
         return ResultUtils.success("修改成功");
     }
 
-    @GetMapping("/getProductList")
-    public Result<Object> getProductList(HttpServletRequest request) {
+    @GetMapping("/getSellerProductList")
+    public Result<Object> getSellerProductList(HttpServletRequest request) {
         Result<Object> res = tokenUtils.expireOrUser(request);
         if (res.getCode() != 200) {
             return res;
@@ -82,8 +82,8 @@ public class ProductController {
         return ResultUtils.success("获取成功", list);
     }
 
-    @GetMapping("/getProduct")
-    public Result<Object> getProduct(@RequestParam Long productID, HttpServletRequest request) {
+    @GetMapping("/getProductDetail")
+    public Result<Object> getProductDetail(@RequestParam Long productID, HttpServletRequest request) {
         Result<Object> res = tokenUtils.expireOrUser(request);
         if (res.getCode() != 200) {
             return res;
@@ -143,6 +143,15 @@ public class ProductController {
     @GetMapping("/getCategories")
     public Result<Object> getCategories(HttpServletRequest request) {
         return ResultUtils.success("获取全部分类成功", categoryService.getCategories());
+    }
+
+    @GetMapping("/getProdPage")
+    public Result<Object> getProdPage(@RequestParam(defaultValue = "1") Integer pageNum,
+                                            @RequestParam(defaultValue = "20") Integer pageSize,
+                                            @RequestParam(defaultValue = "0") Long categoryID,
+                                            @RequestParam(defaultValue = "") String searchText,
+                                            @RequestParam(defaultValue = "0") Long sellerID) {
+        return ResultUtils.success(productService.getProdPage(pageNum, pageSize, categoryID, searchText, sellerID));
     }
 
 
